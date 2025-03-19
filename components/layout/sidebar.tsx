@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { ChevronRight, Settings, LayoutDashboard, Bot, Shield, Flame, User, MessagesSquare } from "lucide-react"
+import { ChevronRight, Settings, LayoutDashboard, Bot, Shield, Flame, User, MessagesSquare, ChartBar } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
@@ -23,6 +23,11 @@ const sidebarItems = [
     title: "leads Email",
     href: "/dashboard/leads-email",
     icon: Flame,
+  },
+  {
+    title: "Analytics",
+    href : "/dashboard/analytics",
+    icon: ChartBar,
   },
   {
     title: "Sample Code",
