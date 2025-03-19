@@ -1,0 +1,139 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model EmailHistory {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  content   String
+  sentAt    DateTime @default(now())
+  leadId    String?  @db.ObjectId
+  lead      Lead?    @relation(fields: [leadId], references: [id])
+}
+
+model EmailSchedule {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  leadId    String   @db.ObjectId
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  frequency String   // daily, weekly, custom
+  time      String   // HH:mm format
+  enabled   Boolean  @default(true)
+  lastSent  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Update Lead model to include email schedules
+model Lead {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  email         String?
+  name          String?
+  phone         String?
+  company       String?
+  requirements  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  conversations Conversation[]
+  emailHistory  EmailHistory[] // Add this line
+  emailSchedules EmailSchedule[]
+}
+
+model Conversation {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  message   String
+  response  String
+  timestamp DateTime @default(now())
+  leadId    String?  @db.ObjectId
+  lead      Lead?    @relation(fields: [leadId], references: [id])
+}
+
+// Update User model to include chatbots
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(USER)
+  accounts      Account[]
+  sessions      Session[]
+  websites      Website[] // Add this line to establish the relation
+}
+
+model Website {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  domain    String   // Make domain unique
+  isActive  Boolean @default(true)
+  theme     String?  @default("light")
+  position  String?  @default("bottom-right")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String?  @db.ObjectId
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([domain])
+}
+
+model VerificationToken {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model CompanySettings {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  companyName     String
+  description     String
+  services        String[]
+  caseStudies     String[]
+  specialOffers   String[]
+  promptTemplate  String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
